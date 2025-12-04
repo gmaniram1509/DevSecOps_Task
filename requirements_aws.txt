@@ -1,0 +1,37 @@
+# Core Django framework
+Django==4.2.7
+
+# PostgreSQL adapter for AWS RDS
+psycopg2-binary==2.9.9
+
+# AWS Storage for S3
+boto3==1.29.7
+django-storages==1.14.2
+
+# AWS SES for email (optional)
+django-ses==3.5.2
+
+# Redis cache for AWS ElastiCache (optional)
+redis==5.0.1
+django-redis==5.4.0
+
+# Environment variable management
+python-decouple==3.8
+python-dotenv==1.0.0
+
+# Date/time handling
+python-dateutil==2.8.2
+
+# WSGI HTTP Server for production
+gunicorn==21.2.0
+
+# WhiteNoise for serving static files (fallback)
+whitenoise==6.6.0
+
+# Security and performance
+django-cors-headers==4.3.1
+
+# Development dependencies (optional)
+# django-debug-toolbar==4.2.0
+# django-extensions==3.2.3
+

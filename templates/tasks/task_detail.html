@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ task.title }} - Task Detail{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Back Button -->
+        <div class="mb-3">
+            <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Tasks
+            </a>
+        </div>
+
+        <!-- Task Detail Card -->
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">
+                    <i class="bi bi-file-text"></i> {{ task.title }}
+                </h2>
+            </div>
+            
+            <div class="card-body">
+                <!-- Status and Priority Badges -->
+                <div class="mb-4">
+                    <span class="badge {{ task.get_priority_badge_class }} me-2" style="font-size: 1rem;">
+                        <i class="bi bi-flag"></i> Priority: {{ task.get_priority_display }}
+                    </span>
+                    <span class="badge {{ task.get_status_badge_class }}" style="font-size: 1rem;">
+                        <i class="bi bi-circle-fill"></i> Status: {{ task.get_status_display }}
+                    </span>
+                    {% if task.is_overdue %}
+                    <span class="badge bg-danger ms-2" style="font-size: 1rem;">
+                        <i class="bi bi-exclamation-triangle"></i> Overdue
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div class="mb-4">
+                    <h5 class="text-primary"><i class="bi bi-card-text"></i> Description</h5>
+                    <p class="lead">{{ task.description }}</p>
+                </div>
+
+                <!-- Task Details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <h6 class="text-muted mb-1">
+                                <i class="bi bi-calendar-event"></i> Due Date
+                            </h6>
+                            <p class="h5">{{ task.due_date|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+                    {% if task.estimated_hours %}
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <h6 class="text-muted mb-1">
+                                <i class="bi bi-clock"></i> Estimated Hours
+                            </h6>
+                            <p class="h5">{{ task.estimated_hours }} hours</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Time Tracking Section -->
+                {% if task.estimated_hours %}
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3"><i class="bi bi-hourglass-split"></i> Time Tracking</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Time Spent</h6>
+                                    <h3 class="text-info mb-0">{{ total_time_spent }} h</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Remaining</h6>
+                                    <h3 class="text-warning mb-0">
+                                        {% if time_remaining is not None %}
+                                            {{ time_remaining }} h
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Progress</h6>
+                                    <h3 class="text-primary mb-0">{{ progress_percentage|floatformat:0 }}%</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="mt-3">
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar 
+                                {% if progress_percentage >= 100 %}bg-success{% elif progress_percentage >= 75 %}bg-warning{% else %}bg-info{% endif %}" 
+                                role="progressbar" 
+                                style="width: {{ progress_percentage }}%;" 
+                                aria-valuenow="{{ progress_percentage }}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="100">
+                                {{ progress_percentage|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Time Entries Section -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-primary mb-0"><i class="bi bi-clock-history"></i> Time Entries</h5>
+                        <a href="{% url 'time_entry_create' task.pk %}" class="btn btn-sm btn-info text-white">
+                            <i class="bi bi-plus-circle"></i> Add Time Entry
+                        </a>
+                    </div>
+
+                    {% if time_entries %}
+                    <div class="list-group">
+                        {% for entry in time_entries %}
+                        <div class="list-group-item time-entry">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        <i class="bi bi-calendar3"></i> {{ entry.date|date:"F d, Y" }}
+                                        <span class="badge bg-info ms-2">{{ entry.hours_spent }} hours</span>
+                                    </h6>
+                                    {% if entry.description %}
+                                    <p class="mb-1 text-muted">{{ entry.description }}</p>
+                                    {% else %}
+                                    <p class="mb-1 text-muted fst-italic">No description provided</p>
+                                    {% endif %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> Logged: {{ entry.created_at|date:"M d, Y - g:i A" }}
+                                    </small>
+                                </div>
+                                <div class="btn-group">
+                                    <a href="{% url 'time_entry_update' entry.pk %}" class="btn btn-sm btn-outline-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'time_entry_delete' entry.pk %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No time entries yet. 
+                        <a href="{% url 'time_entry_create' task.pk %}" class="alert-link">Add your first time entry</a>!
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Timestamps -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <h6 class="text-muted mb-1">
+                                <i class="bi bi-plus-circle"></i> Created At
+                            </h6>
+                            <p>{{ task.created_at|date:"F d, Y - g:i A" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <h6 class="text-muted mb-1">
+                                <i class="bi bi-pencil-square"></i> Last Updated
+                            </h6>
+                            <p>{{ task.updated_at|date:"F d, Y - g:i A" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card-footer bg-light">
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'task_update' task.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Edit Task
+                    </a>
+                    <a href="{% url 'task_delete' task.pk %}" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Task
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

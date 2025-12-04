@@ -1,0 +1,29 @@
+# Task & Time Manager - Python Dependencies
+
+# Core Django framework
+Django==4.2.7
+
+# Database support
+# SQLite is built-in with Python, but for production you might want:
+# psycopg2-binary==2.9.9  # PostgreSQL
+# mysqlclient==2.2.0      # MySQL
+
+# For better date/time handling
+python-dateutil==2.8.2
+
+# For environment variables (recommended for production)
+python-decouple==3.8
+
+# Development dependencies
+# Uncomment for development:
+# django-debug-toolbar==4.2.0
+# django-extensions==3.2.3
+
+# Testing
+# pytest==7.4.3
+# pytest-django==4.7.0
+
+# Code quality
+# flake8==6.1.0
+# black==23.11.0
+

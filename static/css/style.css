@@ -1,0 +1,252 @@
+/* Task & Time Manager - Custom Styles */
+
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+}
+
+/* General Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Navbar Styles */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* Statistics Cards */
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 10px;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+.stat-icon {
+    font-size: 3rem;
+    opacity: 0.7;
+}
+
+/* Task Cards */
+.task-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.task-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.task-card .card-title {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Form Styles */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Badge Styles */
+.badge {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Card Styles */
+.card {
+    border-radius: 10px;
+    border: none;
+}
+
+.card-header {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+/* Detail Item Styles */
+.detail-item {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.detail-item h6 {
+    margin-bottom: 0.5rem;
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+/* Footer Styles */
+footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    margin-top: auto;
+}
+
+/* Overdue Task Highlight */
+.border-danger {
+    border-color: var(--danger-color) !important;
+    border-width: 2px !important;
+}
+
+/* Loading Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.task-card {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+    }
+    
+    .display-5 {
+        font-size: 2rem;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #0b5ed7;
+}
+
+/* Print Styles */
+@media print {
+    .navbar,
+    .btn,
+    footer,
+    .card-footer {
+        display: none;
+    }
+    
+    .card {
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+}
+
+/* Time Entry Styles */
+.time-entry {
+    border-left: 3px solid var(--primary-color);
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 1rem;
+}
+
+.time-entry:hover {
+    background-color: #e9ecef;
+}
+
+/* Progress Bar Styles */
+.progress {
+    height: 25px;
+    border-radius: 10px;
+}
+
+.progress-bar {
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* Empty State Styles */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state i {
+    font-size: 5rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+/* Success Animation */
+@keyframes successPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
+    }
+}
+
+.alert-success {
+    animation: successPulse 1s ease-out;
+}
+
