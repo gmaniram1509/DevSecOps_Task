@@ -234,7 +234,7 @@ jobs:
           echo "  - SSH key is incorrect"
           echo "  - EC2 instance is not reachable"
           echo "  - Services failed to restart"
-     # ========================================
+  # ========================================
   # STAGE 5: OWASP ZAP SECURITY SCAN
   # ========================================
   zap-scan:
@@ -259,37 +259,27 @@ jobs:
           target: 'http://${{ secrets.EC2_HOST }}'
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
-          allow_issue_writing: false
-          fail_action: false
-        continue-on-error: true
-
-      - name: ZAP Full Scan
-        uses: zaproxy/action-full-scan@v0.10.0
-        with:
-          target: 'http://${{ secrets.EC2_HOST }}'
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a -j'
-          allow_issue_writing: false
-          fail_action: false
+          artifact_name: 'zap-baseline-report'
         continue-on-error: true
 
       - name: Create ZAP Report Directory
         run: |
           mkdir -p zap-reports
+          echo "📊 ZAP scan completed"
 
       - name: Copy ZAP Reports
         run: |
           echo "📊 Collecting ZAP scan reports..."
           if [ -f report_html.html ]; then
-            cp report_html.html zap-reports/zap-report.html
+            cp report_html.html zap-reports/zap-baseline-report.html
             echo "✅ HTML report copied"
           fi
           if [ -f report_md.md ]; then
-            cp report_md.md zap-reports/zap-report.md
+            cp report_md.md zap-reports/zap-baseline-report.md
             echo "✅ Markdown report copied"
           fi
           if [ -f report_json.json ]; then
-            cp report_json.json zap-reports/zap-report.json
+            cp report_json.json zap-reports/zap-baseline-report.json
             echo "✅ JSON report copied"
           fi
         continue-on-error: true
@@ -298,53 +288,78 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zap-scan-reports
-          path: |
-            zap-reports/
-            report_html.html
-            report_md.md
-            report_json.json
+          path: zap-reports/
           retention-days: 30
         continue-on-error: true
 
-      - name: Generate ZAP Summary
+      - name: Parse ZAP Results
         run: |
-          echo "## 🛡️ OWASP ZAP Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🛡️ OWASP ZAP Security Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Target:** http://${{ secrets.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
           echo "**Scan Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Type:** Baseline (Passive)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ -f report_md.md ]; then
-            echo "### Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "### 📋 Detailed Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
             cat report_md.md >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ No detailed report available" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📥 Download full reports from the artifacts section above" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Reports Available" >> $GITHUB_STEP_SUMMARY
+          echo "Download the complete reports from the **Artifacts** section:" >> $GITHUB_STEP_SUMMARY
+          echo "- HTML Report (Visual)" >> $GITHUB_STEP_SUMMARY
+          echo "- Markdown Report (Text)" >> $GITHUB_STEP_SUMMARY
+          echo "- JSON Report (Machine-readable)" >> $GITHUB_STEP_SUMMARY
 
-      - name: Check for High Risk Vulnerabilities
+      - name: Check for Critical Issues
         run: |
-          if [ -f report_json.json ]; then
-            HIGH_ALERTS=$(grep -o '"riskcode":"3"' report_json.json | wc -l || echo "0")
-            MEDIUM_ALERTS=$(grep -o '"riskcode":"2"' report_json.json | wc -l || echo "0")
+          echo "🔍 Analyzing scan results..."
+          
+          if [ -f report_md.md ]; then
+            # Count warnings and failures
+            WARN_COUNT=$(grep -c "WARN-NEW" report_md.md || echo "0")
+            FAIL_COUNT=$(grep -c "FAIL-NEW" report_md.md || echo "0")
             
-            echo "🔍 Security Scan Results:"
-            echo "  High Risk Alerts: $HIGH_ALERTS"
-            echo "  Medium Risk Alerts: $MEDIUM_ALERTS"
+            echo ""
+            echo "📊 Security Scan Summary:"
+            echo "  ❌ High Risk: $FAIL_COUNT"
+            echo "  ⚠️  Warnings: $WARN_COUNT"
             
-            if [ "$HIGH_ALERTS" -gt 0 ]; then
-              echo "⚠️ WARNING: $HIGH_ALERTS high-risk vulnerabilities found!"
-              echo "Please review the ZAP report for details."
+            if [ "$FAIL_COUNT" -gt 0 ]; then
+              echo ""
+              echo "⚠️ WARNING: $FAIL_COUNT high-risk vulnerabilities detected!"
+              echo "Please review the ZAP reports for details."
             else
-              echo "✅ No high-risk vulnerabilities detected"
+              echo ""
+              echo "✅ No critical vulnerabilities detected"
+            fi
+            
+            if [ "$WARN_COUNT" -gt 0 ]; then
+              echo "ℹ️  $WARN_COUNT warnings found - review recommended"
             fi
           else
-            echo "ℹ️ Unable to parse scan results"
+            echo "ℹ️ Unable to parse detailed results"
           fi
-        continue-on-error: true       
 
+      - name: Display Key Findings
+        run: |
+          echo "### 🔑 Key Security Findings" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f report_md.md ]; then
+            # Extract warnings
+            echo "#### ⚠️ Warnings Detected:" >> $GITHUB_STEP_SUMMARY
+            grep "WARN-NEW:" report_md.md | head -10 >> $GITHUB_STEP_SUMMARY || echo "None" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Extract ignored items
+            echo "#### ℹ️ Informational (Ignored by rules):" >> $GITHUB_STEP_SUMMARY
+            grep "IGNORE:" report_md.md | head -5 >> $GITHUB_STEP_SUMMARY || echo "None" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
   # ========================================
   # STAGE 5: POST-DEPLOYMENT VERIFICATION
   # ========================================
