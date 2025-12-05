@@ -1,213 +1,217 @@
+# =============================================================================
+# COMPLETE tasks/views.py FILE
+# =============================================================================
+# This file includes:
+# 1. All Task Management Views (CRUD operations)
+# 2. All Authentication Views (Login, Signup, Logout, Dashboard)
+# =============================================================================
+
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib import messages
-from django.db.models import Q
-from .models import Task, TimeEntry, Category
-from .forms import TaskForm, TaskFilterForm, TimeEntryForm, CategoryForm
+from django.contrib.auth.models import User
+from django import forms
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from .models import Task
+
+# =============================================================================
+# CUSTOM SIGNUP FORM
+# =============================================================================
+
+class SignUpForm(UserCreationForm):
+    """Custom signup form with email field"""
+    email = forms.EmailField(
+        max_length=254, 
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Email Address'
+        })
+    )
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Username'
+        })
+    )
+    password1 = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Password'
+        })
+    )
+    password2 = forms.CharField(
+        label="Confirm Password",
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Confirm Password'
+        })
+    )
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2')
 
 
-def task_list(request):
-    """
-    View to display all tasks with filtering and search capabilities.
-    """
-    tasks = Task.objects.all()
-    filter_form = TaskFilterForm(request.GET)
+# =============================================================================
+# TASK MANAGEMENT VIEWS (CRUD Operations)
+# =============================================================================
+
+class TaskListView(LoginRequiredMixin, ListView):
+    """Display list of tasks for the logged-in user"""
+    model = Task
+    template_name = 'tasks/task_list.html'
+    context_object_name = 'tasks'
     
-    # Apply filters
-    if filter_form.is_valid():
-        search = filter_form.cleaned_data.get('search')
-        priority = filter_form.cleaned_data.get('priority')
-        status = filter_form.cleaned_data.get('status')
+    def get_queryset(self):
+        """Filter tasks by logged-in user"""
+        queryset = Task.objects.filter(user=self.request.user)
         
+        # Filter by status if provided
+        status = self.request.GET.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        # Filter by priority if provided
+        priority = self.request.GET.get('priority')
+        if priority:
+            queryset = queryset.filter(priority=priority)
+        
+        # Search by title or description
+        search = self.request.GET.get('search')
         if search:
-            tasks = tasks.filter(
-                Q(title__icontains=search) | Q(description__icontains=search)
+            queryset = queryset.filter(
+                title__icontains=search
+            ) | queryset.filter(
+                description__icontains=search
             )
         
-        if priority:
-            tasks = tasks.filter(priority=priority)
-        
-        if status:
-            tasks = tasks.filter(status=status)
+        return queryset.order_by('-created_at')
+
+
+class TaskCreateView(LoginRequiredMixin, CreateView):
+    """Create a new task"""
+    model = Task
+    template_name = 'tasks/task_form.html'
+    fields = ['title', 'description', 'priority', 'status', 'due_date']
+    success_url = reverse_lazy('task_list')
     
-    # Get task statistics
-    total_tasks = Task.objects.count()
-    completed_tasks = Task.objects.filter(status='completed').count()
-    pending_tasks = Task.objects.filter(status='pending').count()
-    in_progress_tasks = Task.objects.filter(status='in_progress').count()
+    def form_valid(self, form):
+        """Set the user before saving"""
+        form.instance.user = self.request.user
+        messages.success(self.request, 'Task created successfully!')
+        return super().form_valid(form)
+
+
+class TaskUpdateView(LoginRequiredMixin, UpdateView):
+    """Update an existing task"""
+    model = Task
+    template_name = 'tasks/task_form.html'
+    fields = ['title', 'description', 'priority', 'status', 'due_date']
+    success_url = reverse_lazy('task_list')
+    
+    def get_queryset(self):
+        """Ensure users can only update their own tasks"""
+        return Task.objects.filter(user=self.request.user)
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Task updated successfully!')
+        return super().form_valid(form)
+
+
+class TaskDeleteView(LoginRequiredMixin, DeleteView):
+    """Delete a task"""
+    model = Task
+    template_name = 'tasks/task_confirm_delete.html'
+    success_url = reverse_lazy('task_list')
+    
+    def get_queryset(self):
+        """Ensure users can only delete their own tasks"""
+        return Task.objects.filter(user=self.request.user)
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, 'Task deleted successfully!')
+        return super().delete(request, *args, **kwargs)
+
+
+# =============================================================================
+# AUTHENTICATION VIEWS
+# =============================================================================
+
+def signup_view(request):
+    """User registration view"""
+    if request.user.is_authenticated:
+        return redirect('task_list')
+    
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, f'Welcome {user.username}! Your account has been created.')
+            return redirect('task_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = SignUpForm()
+    
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+def login_view(request):
+    """User login view"""
+    if request.user.is_authenticated:
+        return redirect('task_list')
+    
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            
+            if user is not None:
+                login(request, user)
+                messages.success(request, f'Welcome back, {username}!')
+                next_url = request.GET.get('next', 'task_list')
+                return redirect(next_url)
+            else:
+                messages.error(request, 'Invalid username or password.')
+        else:
+            messages.error(request, 'Invalid username or password.')
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'registration/login.html', {'form': form})
+
+
+def logout_view(request):
+    """User logout view"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('login')
+
+
+@login_required
+def dashboard_view(request):
+    """Dashboard with task statistics"""
+    tasks = Task.objects.filter(user=request.user)
+    total_tasks = tasks.count()
+    completed_tasks = tasks.filter(status='completed').count()
+    pending_tasks = tasks.filter(status='pending').count()
+    in_progress_tasks = tasks.filter(status='in_progress').count()
     
     context = {
-        'tasks': tasks,
-        'filter_form': filter_form,
         'total_tasks': total_tasks,
         'completed_tasks': completed_tasks,
         'pending_tasks': pending_tasks,
         'in_progress_tasks': in_progress_tasks,
+        'completion_rate': (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0,
     }
     
-    return render(request, 'tasks/task_list.html', context)
-
-
-def task_detail(request, pk):
-    """
-    View to display a single task's details with time entries.
-    """
-    task = get_object_or_404(Task, pk=pk)
-    time_entries = task.time_entries.all()
-    
-    context = {
-        'task': task,
-        'time_entries': time_entries,
-        'total_time_spent': task.get_total_time_spent(),
-        'time_remaining': task.get_time_remaining(),
-        'progress_percentage': task.get_progress_percentage(),
-    }
-    
-    return render(request, 'tasks/task_detail.html', context)
-
-
-def task_create(request):
-    """
-    View to create a new task with validation.
-    """
-    if request.method == 'POST':
-        form = TaskForm(request.POST)
-        if form.is_valid():
-            task = form.save()
-            messages.success(request, f'Task "{task.title}" has been created successfully!')
-            return redirect('task_detail', pk=task.pk)
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = TaskForm()
-    
-    context = {
-        'form': form,
-        'action': 'Create',
-    }
-    
-    return render(request, 'tasks/task_form.html', context)
-
-
-def task_update(request, pk):
-    """
-    View to update an existing task with validation.
-    """
-    task = get_object_or_404(Task, pk=pk)
-    
-    if request.method == 'POST':
-        form = TaskForm(request.POST, instance=task)
-        if form.is_valid():
-            task = form.save()
-            messages.success(request, f'Task "{task.title}" has been updated successfully!')
-            return redirect('task_detail', pk=task.pk)
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = TaskForm(instance=task)
-    
-    context = {
-        'form': form,
-        'task': task,
-        'action': 'Update',
-    }
-    
-    return render(request, 'tasks/task_form.html', context)
-
-
-def task_delete(request, pk):
-    """
-    View to delete a task.
-    """
-    task = get_object_or_404(Task, pk=pk)
-    
-    if request.method == 'POST':
-        task_title = task.title
-        task.delete()
-        messages.success(request, f'Task "{task_title}" has been deleted successfully!')
-        return redirect('task_list')
-    
-    context = {
-        'task': task,
-    }
-    
-    return render(request, 'tasks/task_confirm_delete.html', context)
-
-
-# Time Entry Views
-
-def time_entry_create(request, task_pk):
-    """
-    View to create a new time entry for a task.
-    """
-    task = get_object_or_404(Task, pk=task_pk)
-    
-    if request.method == 'POST':
-        form = TimeEntryForm(request.POST)
-        if form.is_valid():
-            time_entry = form.save(commit=False)
-            time_entry.task = task
-            time_entry.save()
-            messages.success(request, f'Time entry of {time_entry.hours_spent} hours added successfully!')
-            return redirect('task_detail', pk=task.pk)
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = TimeEntryForm()
-    
-    context = {
-        'form': form,
-        'task': task,
-        'action': 'Add',
-    }
-    
-    return render(request, 'tasks/time_entry_form.html', context)
-
-
-def time_entry_update(request, pk):
-    """
-    View to update an existing time entry.
-    """
-    time_entry = get_object_or_404(TimeEntry, pk=pk)
-    task = time_entry.task
-    
-    if request.method == 'POST':
-        form = TimeEntryForm(request.POST, instance=time_entry)
-        if form.is_valid():
-            time_entry = form.save()
-            messages.success(request, f'Time entry updated successfully!')
-            return redirect('task_detail', pk=task.pk)
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = TimeEntryForm(instance=time_entry)
-    
-    context = {
-        'form': form,
-        'task': task,
-        'time_entry': time_entry,
-        'action': 'Update',
-    }
-    
-    return render(request, 'tasks/time_entry_form.html', context)
-
-
-def time_entry_delete(request, pk):
-    """
-    View to delete a time entry.
-    """
-    time_entry = get_object_or_404(TimeEntry, pk=pk)
-    task = time_entry.task
-    
-    if request.method == 'POST':
-        hours = time_entry.hours_spent
-        time_entry.delete()
-        messages.success(request, f'Time entry of {hours} hours has been deleted successfully!')
-        return redirect('task_detail', pk=task.pk)
-    
-    context = {
-        'time_entry': time_entry,
-        'task': task,
-    }
-    
-    return render(request, 'tasks/time_entry_confirm_delete.html', context)
-
+    return render(request, 'tasks/dashboard.html', context)

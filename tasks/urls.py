@@ -2,16 +2,15 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Task URLs
-    path('', views.task_list, name='task_list'),
-    path('task/<int:pk>/', views.task_detail, name='task_detail'),
-    path('task/create/', views.task_create, name='task_create'),
-    path('task/<int:pk>/update/', views.task_update, name='task_update'),
-    path('task/<int:pk>/delete/', views.task_delete, name='task_delete'),
+    # Authentication URLs
+    path('signup/', views.signup_view, name='signup'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
     
-    # Time Entry URLs
-    path('task/<int:task_pk>/time-entry/create/', views.time_entry_create, name='time_entry_create'),
-    path('time-entry/<int:pk>/update/', views.time_entry_update, name='time_entry_update'),
-    path('time-entry/<int:pk>/delete/', views.time_entry_delete, name='time_entry_delete'),
+    # Task URLs (existing)
+    path('', views.TaskListView.as_view(), name='task_list'),
+    path('create/', views.TaskCreateView.as_view(), name='task_create'),
+    path('<int:pk>/update/', views.TaskUpdateView.as_view(), name='task_update'),
+    path('<int:pk>/delete/', views.TaskDeleteView.as_view(), name='task_delete'),
 ]
-
