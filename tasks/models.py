@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import MinLengthValidator, MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from decimal import Decimal
-
+from django.contrib.auth.models import User
 
 class Task(models.Model):
     """
@@ -21,6 +21,14 @@ class Task(models.Model):
         ('completed', 'Completed'),
         ('on_hold', 'On Hold'),
     ]
+    
+    # ===== ADD THIS FIELD - LINKS TASK TO USER =====
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tasks',
+        help_text='User who owns this task'
+    )
     
     title = models.CharField(
         max_length=200,
@@ -197,4 +205,3 @@ class Category(models.Model):
     
     def __str__(self):
         return self.name
-
