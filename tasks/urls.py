@@ -14,4 +14,5 @@ urlpatterns = [
     path('create/', views.TaskCreateView.as_view(), name='task_create'),
     path('<int:pk>/update/', views.TaskUpdateView.as_view(), name='task_update'),
     path('<int:pk>/delete/', views.TaskDeleteView.as_view(), name='task_delete'),
+    path('<int:pk>/time-entry/create/', views.TimeEntryCreateView.as_view(),name='time_entry_create'),
 ]
