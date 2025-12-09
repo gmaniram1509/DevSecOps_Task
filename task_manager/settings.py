@@ -103,13 +103,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 # ===== CSP Configuration =====
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com")
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com")
-CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com", "data:")
-CSP_IMG_SRC = ("'self'", "data:", "https:", "http:")
-CSP_FRAME_ANCESTORS = ("'none'",)
+# ===== CSP Configuration =====
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"]
+CSP_STYLE_SRC = ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"]
+CSP_FONT_SRC = ["'self'", "https://fonts.gstatic.com", "data:"]
+CSP_IMG_SRC = ["'self'", "data:", "https:", "http:"]
+CSP_FRAME_ANCESTORS = ["'none'"]
 CSP_INCLUDE_NONCE_IN = ['script-src', 'style-src']
+
 
 # Additional Security Headers
 SECURE_CONTENT_TYPE_NOSNIFF = True
