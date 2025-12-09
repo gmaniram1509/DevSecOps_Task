@@ -182,7 +182,7 @@ def login_view(request):
                 login(request, user)
                 messages.success(request, f'Welcome back, {username}!')
                 safe_url = get_safe_redirect_url(request, default_url='task_list')
-                return redirect(safe_urll)
+                return redirect(safe_url)
             else:
                 messages.error(request, 'Invalid username or password.')
         else:
@@ -191,22 +191,6 @@ def login_view(request):
         form = AuthenticationForm()
     
     return render(request, 'registration/login.html', {'form': form})
-
-def get_safe_redirect_url(request, default_url='task_list'):
-    next_url = request.GET.get('next') or request.POST.get('next')
-    
-    if next_url:
-        is_safe = url_has_allowed_host_and_scheme(
-            url=next_url,
-            allowed_hosts=settings.ALLOWED_HOSTS,
-            require_https=request.is_secure()
-        )
-        if is_safe:
-            return next_url
-    
-    return reverse(default_url)
-
-
 
 def logout_view(request):
     """User logout view"""
@@ -233,3 +217,17 @@ def dashboard_view(request):
     }
     
     return render(request, 'tasks/dashboard.html', context)
+
+def get_safe_redirect_url(request, default_url='task_list'):
+    next_url = request.GET.get('next') or request.POST.get('next')
+    
+    if next_url:
+        is_safe = url_has_allowed_host_and_scheme(
+            url=next_url,
+            allowed_hosts=settings.ALLOWED_HOSTS,
+            require_https=request.is_secure()
+        )
+        if is_safe:
+            return next_url
+    
+    return reverse(default_url)
