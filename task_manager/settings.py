@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
-from csp.constants import NONCE
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,12 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tasks',
-    'csp',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'csp.middleware.CSPMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -97,46 +95,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# =============================
-# CSP CONFIG (django-csp v4+)
-# =============================
 
-CONTENT_SECURITY_POLICY = {
-    "DIRECTIVES": {
-        "default-src": ["'self'"],
-
-        "script-src": [
-            "'self'",
-            "'unsafe-inline'",
-            "https://cdn.jsdelivr.net",
-            "https://cdnjs.cloudflare.com",
-            NONCE,
-        ],
-
-        "style-src": [
-            "'self'",
-            "'unsafe-inline'",
-            "https://cdn.jsdelivr.net",
-            "https://fonts.googleapis.com",
-            NONCE,
-        ],
-
-        "font-src": [
-            "'self'",
-            "https://fonts.gstatic.com",
-            "data:",
-        ],
-
-        "img-src": [
-            "'self'",
-            "data:",
-            "https:",
-            "http:",
-        ],
-
-        "frame-ancestors": ["'none'"],
-    }
-}
 
 # Additional Security Headers
 SECURE_CONTENT_TYPE_NOSNIFF = True
