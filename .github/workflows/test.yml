@@ -15,7 +15,7 @@ jobs:
   # STAGE 1: SOURCE CODE
   # ========================================
   source-code:
-    name: 📥 Source Code Checkout
+    name:  Source Code Checkout
     runs-on: ubuntu-latest
 
     steps:
