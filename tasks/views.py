@@ -17,6 +17,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from .models import Task
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.conf import settings
 
 # =============================================================================
 # CUSTOM SIGNUP FORM
@@ -178,8 +181,8 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f'Welcome back, {username}!')
-                next_url = request.GET.get('next', 'task_list')
-                return redirect(next_url)
+                safe_url = get_safe_redirect_url(request, default_url='task_list')
+                return redirect(safe_urll)
             else:
                 messages.error(request, 'Invalid username or password.')
         else:
@@ -188,6 +191,21 @@ def login_view(request):
         form = AuthenticationForm()
     
     return render(request, 'registration/login.html', {'form': form})
+
+def get_safe_redirect_url(request, default_url='task_list'):
+    next_url = request.GET.get('next') or request.POST.get('next')
+    
+    if next_url:
+        is_safe = url_has_allowed_host_and_scheme(
+            url=next_url,
+            allowed_hosts=settings.ALLOWED_HOSTS,
+            require_https=request.is_secure()
+        )
+        if is_safe:
+            return next_url
+    
+    return reverse(default_url)
+
 
 
 def logout_view(request):
