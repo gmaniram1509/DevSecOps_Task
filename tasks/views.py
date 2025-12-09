@@ -14,7 +14,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django import forms
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView,  DetailView
 from django.urls import reverse_lazy
 from .models import Task
 from django.urls import reverse
@@ -140,6 +140,14 @@ class TaskDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, 'Task deleted successfully!')
         return super().delete(request, *args, **kwargs)
+    
+class TaskDetailView(LoginRequiredMixin, DetailView):
+    model = Task
+    template_name = 'tasks/task_detail.html'
+    context_object_name = 'task'
+
+    def get_queryset(self):
+        return Task.objects.filter(user=self.request.user)
 
 
 # =============================================================================
